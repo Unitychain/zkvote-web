@@ -33,6 +33,8 @@ const bigInt = snarkjs.bigInt;
 
 const eddsa = circomlib.eddsa;
 const mimc7 = circomlib.mimc7;
+const pedersenHash = circomlib.pedersenHash;
+const babyJub = circomlib.babyJub;
 
 const proof_util = require('../util');
 
@@ -51,6 +53,12 @@ beBuff2int = function(buff) {
     return res;
 };
 
+function hash(ints) {
+  const p = babyJub.unpackPoint(pedersenHash.hash(Buffer.concat(
+             ints.map(x => x.leInt2Buff(32))
+  )));
+  return bigInt(p[0]);
+}
 
 
 class SemaphoreClient {
@@ -76,7 +84,8 @@ class SemaphoreClient {
         this.identity_nullifier = loaded_identity.identity_nullifier;
         this.identity_r = loaded_identity.identity_r;
 
-        this.identity_commitment = mimc7.multiHash([bigInt(pubKey[0]), bigInt(pubKey[1]), bigInt(this.identity_nullifier), bigInt(this.identity_r)]);
+        //this.identity_commitment = mimc7.multiHash([bigInt(pubKey[0]), bigInt(pubKey[1]), bigInt(this.identity_nullifier), bigInt(this.identity_r)]);
+        this.identity_commitment = hash([bigInt(pubKey[0]), bigInt(pubKey[1]), bigInt(this.identity_nullifier), bigInt(this.identity_r)]);
         logger.verbose(`identity_commitment: ${this.identity_commitment}`);
 
         this.web3 = new Web3(node_url);
@@ -115,10 +124,12 @@ class SemaphoreClient {
         const signal_hash = beBuff2int(signal_hash_raw.slice(0, 31));
         const broadcaster_address = bigInt(this.broadcaster_address);
 
-        const msg = mimc7.multiHash([external_nullifier, signal_hash, broadcaster_address]);
-        const signature = eddsa.signMiMC(prvKey, msg);
+        const msg = Buffer.concat(
+               [external_nullifier, signal_hash, broadcaster_address].map(x => x.leInt2Buff(32))
+        );
+        const signature = eddsa.sign(prvKey, msg);
 
-        assert(eddsa.verifyMiMC(msg, signature, pubKey));
+        assert(eddsa.verify(msg, signature, pubKey));
 
         const identity_nullifier = this.identity_nullifier;
         const identity_r = this.identity_r;
@@ -165,7 +176,9 @@ class SemaphoreClient {
         const root = w[this.circuit.getSignalIdx('main.root')];
         const nullifiers_hash = w[this.circuit.getSignalIdx('main.nullifiers_hash')];
         assert(this.circuit.checkWitness(w));
+        logger.verbose(`asserting root for commitment: ${w[this.circuit.getSignalIdx('main.identity_commitment.out[0]')]}`);
         assert.equal(w[this.circuit.getSignalIdx('main.root')].toString(), identity_path.root);
+        logger.verbose('done asserting root');
 
         logger.info(`generating proof (started at ${Date.now()})`);
         const proof = await proof_util.prove(witness_bin.buffer, this.vk_proof.buffer);
@@ -261,7 +274,7 @@ function generate_identity(logger) {
     const identity_r = '0x' + crypto.randomBytes(31).toString('hex');
     logger.info(`generate identity from (private_key, public_key[0], public_key[1], identity_nullifier, identity_r): (${private_key}, ${pubKey[0]}, ${pubKey[1]}, ${identity_nullifier}, ${identity_r})`);
 
-    const identity_commitment = mimc7.multiHash([bigInt(pubKey[0]), bigInt(pubKey[1]), bigInt(identity_nullifier), bigInt(identity_r)]);
+    const identity_commitment = hash([bigInt(pubKey[0]), bigInt(pubKey[1]), bigInt(identity_nullifier), bigInt(identity_r)]);
 
     logger.info(`identity_commitment : ${identity_commitment}`);
     const generated_identity = {

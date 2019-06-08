@@ -1,21 +1,8 @@
-include "../node_modules/circomlib/circuits/mimc.circom";
+include "../node_modules/circomlib/circuits/pedersen_efficient.circom";
 include "../node_modules/circomlib/circuits/bitify.circom";
-include "../node_modules/circomlib/circuits/eddsamimc.circom";
+include "../node_modules/circomlib/circuits/pointbits.circom";
+include "../node_modules/circomlib/circuits/eddsa.circom";
 include "./blake2s/blake2s.circom";
-
-template HashLeftRight(n_rounds) {
-  signal input left;
-  signal input right;
-
-  signal output hash;
-
-  component hasher = MultiMiMC7(2, n_rounds);
-  left ==> hasher.in[0];
-  right ==> hasher.in[1];
-  hasher.k <== 0;
-
-  hash <== hasher.out;
-}
 
 template Selector() {
   signal input input_elem;
@@ -65,38 +52,109 @@ template Semaphore(jubjub_field_size, n_levels, n_rounds) {
 
     // END signals
 
-    component identity_commitment = MultiMiMC7(4, n_rounds);
+    var i; var j; var k;
+    var pedersen_bits = 4*256;
+    component pedersenProvider = PedersenProvider(pedersen_bits);
+    component identity_commitment = PedersenNoWindow(pedersen_bits);
+    var nSegments = ((pedersen_bits-1)\200)+1;
+    var maxNWindows = ((200 - 1)\4)+1;
+    for (i=0; i<nSegments; i++) {
+      for (j=0; j<maxNWindows; j++) {
+        for (k=0; k<2; k++) {
+            identity_commitment.base[i][j][k] <== pedersenProvider.baseout[i][j][k];
+            identity_commitment.dbl2[i][j][k] <== pedersenProvider.dbl2out[i][j][k];
+            identity_commitment.adr3[i][j][k] <== pedersenProvider.adr3out[i][j][k];
+            identity_commitment.adr4[i][j][k] <== pedersenProvider.adr4out[i][j][k];
+            identity_commitment.adr5[i][j][k] <== pedersenProvider.adr5out[i][j][k];
+            identity_commitment.adr6[i][j][k] <== pedersenProvider.adr6out[i][j][k];
+            identity_commitment.adr7[i][j][k] <== pedersenProvider.adr7out[i][j][k];
+            identity_commitment.adr8[i][j][k] <== pedersenProvider.adr8out[i][j][k];
+        }
+      }
+    }
+
 
     // BEGIN identity commitment
-    identity_commitment.in[0] <== identity_pk[0];
-    identity_commitment.in[1] <== identity_pk[1];
-    identity_commitment.in[2] <== identity_nullifier;
-    identity_commitment.in[3] <== identity_r;
-    identity_commitment.k <== 0;
+    component identity_commitment_n2b[4];
+    identity_commitment_n2b[0] = Num2Bits(254);
+    identity_commitment_n2b[0].in <== identity_pk[0];
+    identity_commitment_n2b[1] = Num2Bits(254);
+    identity_commitment_n2b[1].in <== identity_pk[1];
+    identity_commitment_n2b[2] = Num2Bits(254);
+    identity_commitment_n2b[2].in <== identity_nullifier;
+    identity_commitment_n2b[3] = Num2Bits(254);
+    identity_commitment_n2b[3].in <== identity_r;
+    for (i = 0; i < 256; i++) {
+      if (i < 254) {
+        identity_commitment.in[i] <== identity_commitment_n2b[0].out[i];
+        identity_commitment.in[i+256] <== identity_commitment_n2b[1].out[i];
+        identity_commitment.in[i+2*256] <== identity_commitment_n2b[2].out[i];
+        identity_commitment.in[i+3*256] <== identity_commitment_n2b[3].out[i];
+      } else {
+        identity_commitment.in[i] <== 0;
+        identity_commitment.in[i+256] <== 0;
+        identity_commitment.in[i+2*256] <== 0;
+        identity_commitment.in[i+3*256] <== 0;
+
+      }
+    }
+
     // END identity commitment
 
     // BEGIN tree
     component selectors[n_levels];
     component hashers[n_levels];
+    component hashers_n2b[n_levels][2];
 
-    for (var i = 0; i < n_levels; i++) {
+    var hasher_pedersen_bits = 2*256;
+    component hasherPedersenProvider = PedersenProvider(hasher_pedersen_bits);
+    var z;
+    var hasherNSegments = ((hasher_pedersen_bits-1)\200)+1;
+    for (i = 0; i < n_levels; i++) {
       selectors[i] = Selector();
-      hashers[i] = HashLeftRight(n_rounds);
+      hashers[i] = PedersenNoWindow(hasher_pedersen_bits);
+
+      if (i == 0) {
+        identity_commitment.out[0] ==> selectors[0].input_elem;
+      } else {
+        hashers[i-1].out[0] ==> selectors[i].input_elem;
+      }
+
+      for (z=0; z<hasherNSegments; z++) {
+        for (j=0; j<maxNWindows; j++) {
+          for (k=0; k<2; k++) {
+              hashers[i].base[z][j][k] <== hasherPedersenProvider.baseout[z][j][k];
+              hashers[i].dbl2[z][j][k] <== hasherPedersenProvider.dbl2out[z][j][k];
+              hashers[i].adr3[z][j][k] <== hasherPedersenProvider.adr3out[z][j][k];
+              hashers[i].adr4[z][j][k] <== hasherPedersenProvider.adr4out[z][j][k];
+              hashers[i].adr5[z][j][k] <== hasherPedersenProvider.adr5out[z][j][k];
+              hashers[i].adr6[z][j][k] <== hasherPedersenProvider.adr6out[z][j][k];
+              hashers[i].adr7[z][j][k] <== hasherPedersenProvider.adr7out[z][j][k];
+              hashers[i].adr8[z][j][k] <== hasherPedersenProvider.adr8out[z][j][k];
+          }
+        }
+      }
 
       identity_path_index[i] ==> selectors[i].path_index;
       identity_path_elements[i] ==> selectors[i].path_elem;
 
-      selectors[i].left ==> hashers[i].left;
-      selectors[i].right ==> hashers[i].right;
+      hashers_n2b[i][0] = Num2Bits(254);
+      hashers_n2b[i][0].in <== selectors[i].left;
+      hashers_n2b[i][1] = Num2Bits(254);
+      hashers_n2b[i][1].in <== selectors[i].right;
+
+      for (z = 0; z < 256; z++) {
+        if (z < 254) {
+          hashers[i].in[z] <== hashers_n2b[i][0].out[z];
+          hashers[i].in[z+256] <== hashers_n2b[i][1].out[z];
+        } else {
+          hashers[i].in[z] <== 0;
+          hashers[i].in[z+256] <== 0;
+        }
+      }
     }
 
-    identity_commitment.out ==> selectors[0].input_elem;
-
-    for (var i = 1; i < n_levels; i++) {
-      hashers[i-1].hash ==> selectors[i].input_elem;
-    }
-
-    root <== hashers[n_levels - 1].hash;
+    root <== hashers[n_levels - 1].out[0];
     // END tree
 
     // BEGIN nullifiers
@@ -106,13 +164,13 @@ template Semaphore(jubjub_field_size, n_levels, n_rounds) {
     external_nullifier_bits.in <== external_nullifier;
 
     component nullifiers_hasher = Blake2s(508, 248018401820981);
-    for (var i = 0; i < 254; i++) {
+    for (i = 0; i < 254; i++) {
       nullifiers_hasher.in_bits[i] <== identity_nullifier_bits.out[i];
       nullifiers_hasher.in_bits[254 + i] <== external_nullifier_bits.out[i];
     }
 
     component nullifiers_hash_num = Bits2Num(253);
-    for (var i = 0; i < 253; i++) {
+    for (i = 0; i < 253; i++) {
       nullifiers_hash_num.in[i] <== nullifiers_hasher.out[i];
     }
 
@@ -121,20 +179,41 @@ template Semaphore(jubjub_field_size, n_levels, n_rounds) {
     // END nullifiers
 
     // BEGIN verify sig
-    component msg_hasher = MultiMiMC7(3, n_rounds);
-    msg_hasher.in[0] <== external_nullifier;
-    msg_hasher.in[1] <== signal_hash;
-    msg_hasher.in[2] <== broadcaster_address;
-    msg_hasher.k <== 0;
 
-    component sig_verifier = EdDSAMiMCVerifier();
-    1 ==> sig_verifier.enabled;
-    identity_pk[0] ==> sig_verifier.Ax;
-    identity_pk[1] ==> sig_verifier.Ay;
-    auth_sig_r[0] ==> sig_verifier.R8x;
-    auth_sig_r[1] ==> sig_verifier.R8y;
-    auth_sig_s ==> sig_verifier.S;
-    msg_hasher.out ==> sig_verifier.M;
+    component msg_hasher_n2b[3];
+    msg_hasher_n2b[0] = Num2Bits(254);
+    msg_hasher_n2b[0].in <== external_nullifier;
+    msg_hasher_n2b[1] = Num2Bits(254);
+    msg_hasher_n2b[1].in <== signal_hash;
+    msg_hasher_n2b[2] = Num2Bits(254);
+    msg_hasher_n2b[2].in <== broadcaster_address;
+
+    component A_bits = Point2Bits_Strict();
+    A_bits.in[0] <== identity_pk[0];
+    A_bits.in[1] <== identity_pk[1];
+    component R8_bits = Point2Bits_Strict();
+    R8_bits.in[0] <== auth_sig_r[0];
+    R8_bits.in[1] <== auth_sig_r[1];
+    component S_bits = Num2Bits(254);
+    S_bits.in <== auth_sig_s;
+
+    component sig_verifier = EdDSAVerifier(3*256);
+    for (i = 0; i < 256; i++) {
+      sig_verifier.A[i] <== A_bits.out[i];
+      sig_verifier.R8[i] <== R8_bits.out[i];
+
+      if (i < 254) {
+        sig_verifier.S[i] <== S_bits.out[i];
+        sig_verifier.msg[i] <== msg_hasher_n2b[0].out[i];
+        sig_verifier.msg[i+256] <== msg_hasher_n2b[1].out[i];
+        sig_verifier.msg[i+2*256] <== msg_hasher_n2b[2].out[i];
+      } else {
+        sig_verifier.S[i] <== 0;
+        sig_verifier.msg[i] <== 0;
+        sig_verifier.msg[i+256] <== 0;
+        sig_verifier.msg[i+2*256] <== 0;
+      }
+    }
 
     // END verify sig
 }

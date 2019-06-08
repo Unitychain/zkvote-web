@@ -22,7 +22,8 @@
 
 const RocksDb = require('zkp-sbmtjs/src/storage/rocksdb');
 const MerkleTree = require('zkp-sbmtjs/src/tree');
-const Mimc7Hasher = require('zkp-sbmtjs/src/hasher/mimc7');
+//const Mimc7Hasher = require('zkp-sbmtjs/src/hasher/mimc7');
+const PedersenHasher = require('zkp-sbmtjs/src/hasher/pedersen');
 
 const Web3 = require('web3');
 const SemaphoreABI = require('../../build/contracts/Semaphore.json');
@@ -137,11 +138,13 @@ class SemaphoreServer {
               const saved_state_block = await this.get_state_for_block(last_processed_block);
               logger.debug(`saved_state_block: ${JSON.stringify(saved_state_block)}`);
 
+              /*
               if ( saved_state_block.root && (state_root != saved_state_block.root ||
                   state_signal_root != saved_state_block.signal_root)) {
                   await this.rollback_one_step(last_processed_block);
                   continue;
               }
+              */
 
               const target_block_number = Math.min(current_block_number, last_processed_block + 10);
 
@@ -284,14 +287,14 @@ class SemaphoreServer {
 
 const prefix = 'semaphore';
 const storage = new RocksDb(server_config.DB_PATH || 'semaphore_server.db');
-const hasher = new Mimc7Hasher();
+const hasher = new PedersenHasher();
 const default_value = '0';
 
 const tree = new MerkleTree(
     `${prefix}_id_tree`,
     storage,
     hasher,
-    20,
+    2,
     default_value,
 );
 
@@ -299,7 +302,7 @@ const signal_tree = new MerkleTree(
   `${prefix}_signal_tree`,
   storage,
   hasher,
-  20,
+  2,
   default_value,
 );
 
