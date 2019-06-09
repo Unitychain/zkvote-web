@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "circom": "0.0.27",
-    "circomlib": "git+https://github.com/iden3/circomlib.git#d91afa804ace6481f4468eebc0bf55229771e24c",
+    "circomlib": "git+https://github.com/kobigurk/circomlib.git#92d57a565387ca1f1071b50498f523617f289612",
     "cors": "^2.8.5",
     "del": "^4.1.0",
     "file-saver": "^2.0.1",
