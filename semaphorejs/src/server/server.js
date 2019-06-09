@@ -294,7 +294,7 @@ const tree = new MerkleTree(
     `${prefix}_id_tree`,
     storage,
     hasher,
-    2,
+    20,
     default_value,
 );
 
@@ -302,7 +302,7 @@ const signal_tree = new MerkleTree(
   `${prefix}_signal_tree`,
   storage,
   hasher,
-  2,
+  20,
   default_value,
 );
 
