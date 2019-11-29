@@ -42,26 +42,31 @@ template Selector() {
   right <== right_selector_1 + right_selector_2;
 }
 
-template Semaphore(jubjub_field_size, n_levels, n_rounds) {
+template Semaphore(n_levels) {
     // BEGIN signals
 
     signal input signal_hash;
     signal input external_nullifier;
     
     signal private input fake_zero;
-
     fake_zero === 0;
 
     // mimc vector commitment
     signal private input identity_pk[2];
-    signal private input identity_nullifier;
-    signal private input identity_trapdoor;
+    signal private input identity_secret;
     signal private input identity_path_elements[n_levels];
     signal private input identity_path_index[n_levels];
 
     // signature on (external nullifier, signal_hash) with identity_pk
     signal private input auth_sig_r[2];
     signal private input auth_sig_s;
+
+    // mimc hash
+    signal output root;
+    signal output nullifiers_hash;
+
+    var mimc_rounds = 220;
+
 
     // get a prime subgroup element derived from identity_pk
     component dbl1 = BabyDbl();
@@ -74,40 +79,19 @@ template Semaphore(jubjub_field_size, n_levels, n_rounds) {
     dbl3.x <== dbl2.xout;
     dbl3.y <== dbl2.yout;
 
-    // mimc hash
-    signal output root;
-    signal output nullifiers_hash;
+    component id_pk0_bits = Num2Bits(256);
+    id_pk0_bits.in <== dbl3.xout;
 
-    // END signals
+    component id_secrect_bits = Num2Bits(256);
+    id_secrect_bits.in <== identity_secret;
 
-
-    component identity_nullifier_bits = Num2Bits(248);
-    identity_nullifier_bits.in <== identity_nullifier;
-
-    component identity_trapdoor_bits = Num2Bits(248);
-    identity_trapdoor_bits.in <== identity_trapdoor;
-
-    component identity_pk_0_bits = Num2Bits_strict();
-    identity_pk_0_bits.in <== dbl3.xout;
-
-    component identity_commitment = Pedersen(3*256);
-    // BEGIN identity commitment
-    for (var i = 0; i < 256; i++) {
-      if (i < 254) {
-        identity_commitment.in[i] <== identity_pk_0_bits.out[i];
-      } else {
-        identity_commitment.in[i] <== 0;
-      }
-
-      if (i < 248) {
-        identity_commitment.in[i + 256] <== identity_nullifier_bits.out[i];
-        identity_commitment.in[i + 2*256] <== identity_trapdoor_bits.out[i];
-      } else {
-        identity_commitment.in[i + 256] <== 0;
-        identity_commitment.in[i + 2*256] <== 0;
-      }
+    component id_commitment = Pedersen(2*256);
+    for(var i=0; i<256; i++) {
+        id_commitment.in[i] <== id_pk0_bits.out[i];
+        id_commitment.in[256 + i] <== id_secrect_bits.out[i];
     }
     // END identity commitment
+
 
     // BEGIN tree
     component selectors[n_levels];
@@ -115,7 +99,7 @@ template Semaphore(jubjub_field_size, n_levels, n_rounds) {
 
     for (var i = 0; i < n_levels; i++) {
       selectors[i] = Selector();
-      hashers[i] = HashLeftRight(n_rounds);
+      hashers[i] = HashLeftRight(mimc_rounds);
 
       identity_path_index[i] ==> selectors[i].path_index;
       identity_path_elements[i] ==> selectors[i].path_elem;
@@ -123,8 +107,7 @@ template Semaphore(jubjub_field_size, n_levels, n_rounds) {
       selectors[i].left ==> hashers[i].left;
       selectors[i].right ==> hashers[i].right;
     }
-
-    identity_commitment.out[0] ==> selectors[0].input_elem;
+    id_commitment.out[0] ==> selectors[0].input_elem;
 
     for (var i = 1; i < n_levels; i++) {
       hashers[i-1].hash ==> selectors[i].input_elem;
@@ -133,13 +116,14 @@ template Semaphore(jubjub_field_size, n_levels, n_rounds) {
     root <== hashers[n_levels - 1].hash;
     // END tree
 
+
     // BEGIN nullifiers
-    component external_nullifier_bits = Num2Bits(232);
+    component external_nullifier_bits = Num2Bits(256);
     external_nullifier_bits.in <== external_nullifier;
 
     component nullifiers_hasher = Blake2s(512, 0);
     for (var i = 0; i < 248; i++) {
-      nullifiers_hasher.in_bits[i] <== identity_nullifier_bits.out[i];
+      nullifiers_hasher.in_bits[i] <== id_secrect_bits.out[i];
     }
 
     for (var i = 0; i < 232; i++) {
@@ -163,8 +147,9 @@ template Semaphore(jubjub_field_size, n_levels, n_rounds) {
 
     // END nullifiers
 
+
     // BEGIN verify sig
-    component msg_hasher = MiMCSponge(2, n_rounds, 1);
+    component msg_hasher = MiMCSponge(2, mimc_rounds, 1);
     msg_hasher.ins[0] <== external_nullifier;
     msg_hasher.ins[1] <== signal_hash;
     msg_hasher.k <== 0;
