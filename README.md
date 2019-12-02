@@ -40,7 +40,7 @@ Lastly, the contract has a few events to allow a server to build a local state t
 Manages a number of append-only Merkle trees with efficient inserts and updates.
 
 ### zkSNARK statement
-Implemented in [**semaphorejs/cricom**](semaphorejs/cricom).
+Implemented in [**semaphorejs/cricom**](./semaphorejs/cricom).
 
 The statement assures that given public inputs:
 
