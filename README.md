@@ -2,9 +2,9 @@
 
 ## Introduction
 
-zkVote is based on Semaphore is introduced by [barryWhiteHat](https://github.com/barryWhiteHat) as a method of zero-knowledge signaling - a method for an approved user to broadcast an arbitrary string without exposing their identity. This repository is an implementation of an upgraded version of the concept, including the zero-knowledge circuits and web side.
+zkVote is based on Semaphore which is introduced by [barryWhiteHat](https://github.com/barryWhiteHat) as a method of zero-knowledge signaling - a method for an approved user to broadcast an arbitrary string without exposing their identity. This repository is an implementation of an upgraded version of the concept, including the zero-knowledge circuits and web side.
 
-The project is separated into two parts, one is implemented in plain Node.JS and uses [circom](https://github.com/iden3/circom) for the zero-knowledge proofs.The other is implemented in Golang for verification of zero-knowledge proofs and p2p network.
+The project is separated into two parts, one is implemented in plain Node.JS and uses [circom](https://github.com/iden3/circom) for the zero-knowledge proofs.[The other](https://github.com/Unitychain/zkvote-node) is implemented in Golang for verification of zero-knowledge proofs and p2p network.
 
 #### zkVote (TBD)
   The Semaphore contract is the base layer of Semaphore. Other contracts can build upon this to create applications that rely on anonymous signaling. Semaphore has a tree of allowed identities, a tree of signals, a set of previously broadcast nullifiers hashes, multiple external nullifiers and a gas price refund price:
