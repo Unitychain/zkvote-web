@@ -34,7 +34,7 @@ const circomlib = require('circomlib');
 const eddsa = circomlib.eddsa;
 const mimcsponge = circomlib.mimcsponge;
 
-// const fetch = require('node-fetch');
+const ethers = require('ethers');
 
 let logger;
 const SECRET_HASH_RUNS = 100;
@@ -54,37 +54,33 @@ function blake2s(ints) {
 }
 
 function vote(private_key, identity_path, question, signal) {
-    // logger.info(`broadcasting signal ${signal}`);
     console.log(`identity_path: ${stringifyBigInts(identity_path)}`);
-
-    // logger.verbose(`identity_commitment: ${this.identity_commitment}`);
     const prvKey = Buffer.from(private_key, 'hex');
     const pubKey = eddsa.prv2pub(prvKey);
     
     const id = get_id_commitment(private_key)
-    console.log("secret:\n ", id.id_secret, " --> id_secret")
+    console.log("secret:\n ", id.id_secret, " --> identity_secret")
 
     // verify signature
-    let big_question = bigInt.leBuff2int(Buffer.from(question));
-    const question_hash = circomlib.mimcsponge.multiHash([big_question])
-    const big_signal = bigInt(signal)
-    const signal_hash = circomlib.mimcsponge.multiHash([big_signal])
+    // let big_question = bigInt.leBuff2int(Buffer.from(question));
+    // const question_hash = circomlib.mimcsponge.multiHash([big_question])
+    const hex_question_hash = ethers.utils.solidityKeccak256(
+      ['string'],
+      [question],
+    );
+    const question_hash = bigInt.beBuff2int(Buffer.from(hex_question_hash.slice(2), 'hex'));
+  
+    // const big_signal = bigInt(signal)
+    // const signal_hash = circomlib.mimcsponge.multiHash([big_signal])
+    const hex_signal_hash = ethers.utils.solidityKeccak256(
+      ['int'],
+      [signal],
+    );
+    const signal_hash = bigInt.beBuff2int(Buffer.from(hex_signal_hash.slice(2), 'hex'));
     
     const msg = mimcsponge.multiHash([question_hash, signal_hash]);
     const signature = eddsa.signMiMCSponge(prvKey, msg);
     assert(eddsa.verifyMiMCSponge(msg, signature, pubKey));
-
-    
-    // let identity_path;
-    // if (identity_index === null) {
-    //   console.log(`identity_index is undefined`);
-    //     const identity_path_response = await fetch(`${semaphore_server_url}/path_for_element/${id.id_commitment}`)
-    //     identity_path = (await identity_path_response.json());
-    // } else {
-    //   console.log(`identity_index is ${identity_index}`);
-    //     const identity_path_response = await fetch(`${semaphore_server_url}/path/${identity_index}`)
-    //     identity_path = await identity_path_response.json();
-    // }
 
     // nullifier hash
     // Not ready yet
@@ -117,10 +113,10 @@ function get_id_commitment(private_key) {
     for (let i=0; i<SECRET_HASH_RUNS; i++) {
         big_id_secret = blake2s([big_id_secret, bigInt(i)]);
     }
-    console.log(`id_secret: ${big_id_secret}`);
+    // console.log(`identity_secret: ${big_id_secret}`);
 
 		const id_commitment = pedersenHash([bigInt(circomlib.babyJub.mulPointEscalar(pubKey, 8)[0]), big_id_secret]);
-    console.log(`identity_commitment : ${id_commitment}`);
+    // console.log(`identity_commitment : ${id_commitment}`);
     return  {
         id_secret: big_id_secret.toString(),
         id_commitment: id_commitment.toString()
