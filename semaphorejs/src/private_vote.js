@@ -60,6 +60,7 @@ function vote(private_key, identity_path, question, signal) {
     
     const id = get_id_commitment(private_key)
     console.log("secret:\n ", id.id_secret, " --> identity_secret")
+    console.log("id commitment:\n ", id.id_commitment)
 
     // verify signature
     // let big_question = bigInt.leBuff2int(Buffer.from(question));
@@ -68,15 +69,19 @@ function vote(private_key, identity_path, question, signal) {
       ['string'],
       [question],
     );
-    const question_hash = bigInt.beBuff2int(Buffer.from(hex_question_hash.slice(2), 'hex'));
+    let question_hash = bigInt.beBuff2int(Buffer.from(hex_question_hash.slice(2), 'hex'));
+    question_hash = question_hash/bigInt(8)
+    // question_hash = bigInt("16006556194422204507365531149559851628469255505732934222920126460960359256387")
   
     // const big_signal = bigInt(signal)
     // const signal_hash = circomlib.mimcsponge.multiHash([big_signal])
     const hex_signal_hash = ethers.utils.solidityKeccak256(
-      ['int'],
+      ['int8'],
       [signal],
     );
     const signal_hash = bigInt.beBuff2int(Buffer.from(hex_signal_hash.slice(2), 'hex'));
+    // console.log("signal, ", signal_hash)
+
     
     const msg = mimcsponge.multiHash([question_hash, signal_hash]);
     const signature = eddsa.signMiMCSponge(prvKey, msg);
@@ -113,9 +118,12 @@ function get_id_commitment(private_key) {
     for (let i=0; i<SECRET_HASH_RUNS; i++) {
         big_id_secret = blake2s([big_id_secret, bigInt(i)]);
     }
+    // workaround for circom Num2Bits
+    big_id_secret = big_id_secret/bigInt(8)
     // console.log(`identity_secret: ${big_id_secret}`);
 
-		const id_commitment = pedersenHash([bigInt(circomlib.babyJub.mulPointEscalar(pubKey, 8)[0]), big_id_secret]);
+    let id_commitment = pedersenHash([bigInt(circomlib.babyJub.mulPointEscalar(pubKey, 8)[0]), big_id_secret]);
+    id_commitment = id_commitment
     // console.log(`identity_commitment : ${id_commitment}`);
     return  {
         id_secret: big_id_secret.toString(),
@@ -136,4 +144,5 @@ module.exports = {
   vote,
   generate_identity,
   get_id_commitment,
+  pedersenHash,
 };

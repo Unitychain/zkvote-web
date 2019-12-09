@@ -1,21 +1,47 @@
 include "../node_modules/circomlib/circuits/pedersen.circom";
 include "../node_modules/circomlib/circuits/mimcsponge.circom";
+include "../node_modules/circomlib/circuits/mimc.circom"
 include "../node_modules/circomlib/circuits/bitify.circom";
 include "../node_modules/circomlib/circuits/eddsamimcsponge.circom";
 include "./blake2s/blake2s.circom";
 
-template HashLeftRight(n_rounds) {
+
+template ShiftRight(n, shf) {
+    signal input in;
+    signal output out;
+
+    component bits = Num2Bits(n);
+    bits.in <== in;
+    component num = Bits2Num(n);
+    for (var i=0; i<n-shf; i++) {
+        num.in[i] <== bits.out[i+shf];
+    }
+    for (var i=n-shf; i<n; i++) {
+        num.in[i] <== 0;
+    }
+    out <== num.out;
+}
+
+template HashLeftRight() {
   signal input left;
   signal input right;
 
   signal output hash;
 
-  component hasher = MiMCSponge(2, n_rounds, 1);
-  left ==> hasher.ins[0];
-  right ==> hasher.ins[1];
+  // component hasher = MiMCSponge(2, n_rounds, 1);
+  // left ==> hasher.ins[0];
+  // right ==> hasher.ins[1];
+  component left_shift = ShiftRight(256, 3);
+  left_shift.in <== left;
+  component right_shift = ShiftRight(256, 3);
+  right_shift.in <== right;
+
+  component hasher = MultiMiMC7(2, 91);
+  left_shift.out ==> hasher.in[0];
+  right_shift.out ==> hasher.in[1];
   hasher.k <== 0;
 
-  hash <== hasher.outs[0];
+  hash <== hasher.out;
 }
 
 template Selector() {
@@ -99,7 +125,7 @@ template Semaphore(n_levels) {
 
     for (var i = 0; i < n_levels; i++) {
       selectors[i] = Selector();
-      hashers[i] = HashLeftRight(mimc_rounds);
+      hashers[i] = HashLeftRight();
 
       identity_path_index[i] ==> selectors[i].path_index;
       identity_path_elements[i] ==> selectors[i].path_elem;
