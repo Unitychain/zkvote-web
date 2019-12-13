@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import { Col, Form, Button } from 'react-bootstrap';
+import { endpoint } from '../env'
 
 class Proposal extends Component {
   constructor(props) {
@@ -24,7 +25,7 @@ class Proposal extends Component {
 
     const data = new FormData(event.target);
 
-    fetch("http://127.0.0.1:3001/subjects/propose", {
+    fetch(endpoint + "/subjects/propose", {
       method: 'POST',
       body: data,
     });
@@ -39,13 +40,11 @@ class Proposal extends Component {
         <h2>Propose a New Subject</h2>
         <Col md={{ span: 10, offset: 1}}>
           <Form onSubmit={this.handleSubmit}>
-            <Form.Group controlId="exampleForm.ControlInput1">
+            <Form.Group>
               <Form.Label>Title</Form.Label>
-              <Form.Control type="text" placeholder="Vote for Lunch" value={this.state.title} onChange={this.handleTitleChange}/>
-            </Form.Group>
-            <Form.Group controlId="exampleForm.ControlTextarea1">
+              <Form.Control name="title" type="text" placeholder="Vote for Lunch" value={this.state.title} onChange={this.handleTitleChange}/>
               <Form.Label>Description</Form.Label>
-              <Form.Control as="textarea" rows="3" placeholder="Let's vote what for lunch!" value={this.state.description} onChange={this.handleDescChange} />
+              <Form.Control name="description" as="textarea" rows="3" placeholder="Let's vote what for lunch!" value={this.state.description} onChange={this.handleDescChange} />
             </Form.Group>
             <Button variant="primary" type="submit">
               Submit

@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import Subject from './Subject'
 import { Row } from 'react-bootstrap';
+import { endpoint } from '../env'
 
 class SubjectList extends Component {
   constructor(props) {
@@ -13,7 +14,7 @@ class SubjectList extends Component {
   }
 
   componentDidMount() {
-    fetch("http://127.0.0.1:3001/subjects")
+    fetch(endpoint + "/subjects")
       .then(res => res.json())
       .then(
         (result) => {
