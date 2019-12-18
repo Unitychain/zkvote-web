@@ -38,10 +38,13 @@ class SubjectList extends Component {
   render() {
     return (
       <div>
-        <h2>Join a Subject</h2>
         <Row>
           {this.state.subjects.map(subject => (          
-            <Subject key={subject.hash} title={subject.title} description={subject.description} />
+            <Subject key={subject.hash}
+              subjectHash={subject.hash}
+              title={subject.title}
+              description={subject.description}
+              proposer={subject.proposer} />
           ))}
         </Row>
       </div>
