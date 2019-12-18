@@ -1,10 +1,10 @@
 import React from 'react';
-// import logo from './logo.svg';
 import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { Navbar } from 'react-bootstrap';
-import SubjectList from './components/SubjectList'
-import Proposal from './components/Proposal'
+import { Navbar, Nav } from 'react-bootstrap';
+import SubjectList from './components/SubjectList';
+import Proposal from './components/Proposal';
+import IdentityPrompt from './components/IdentityPrompt';
 
 function App() {
   return (
@@ -20,9 +20,13 @@ function App() {
           />{' '}
           zkvote
         </Navbar.Brand>
+        <Nav className="ml-auto">
+          <Proposal />
+          &nbsp;&nbsp;
+          <IdentityPrompt />
+        </Nav>
       </Navbar>
       <SubjectList />
-      <Proposal />
       {/* <header className="App-header">
         <img src={logo} className="App-logo" alt="logo" />
         <p>
