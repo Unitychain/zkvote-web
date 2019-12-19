@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { Modal, Form, Button } from 'react-bootstrap';
-import { endpoint } from '../env'
+import { endpoint } from '../env';
 
 class Proposal extends Component {
   constructor(props) {
@@ -26,9 +26,9 @@ class Proposal extends Component {
     this.setState({ show: false })
    }
 
-   handleShow() {
-     this.setState({ show: true })
-   }
+  handleShow() {
+    this.setState({ show: true })
+  }
 
   handleSubmit(event) {
     event.preventDefault();
