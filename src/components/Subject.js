@@ -3,6 +3,8 @@ import { Card, Button, Col } from 'react-bootstrap';
 import { endpoint } from '../env';
 import { generateProof } from '../zkp/proof_generation';
 import jsZip from 'jszip';
+import snarkjs from 'snarkjs';
+const bigInt = snarkjs.bigInt;
 
 class Subject extends Component {
   constructor(props) {
@@ -10,7 +12,12 @@ class Subject extends Component {
     this.state = {
       cir_def: {},
       proving_key: {},
-      verification_key: {}
+      verification_key: {},
+      has_snark_data: {
+        verification_key: false,
+        proving_key: false,
+        cir_def: false
+      }
     }
 
     this.handleJoin = this.handleJoin.bind(this);
@@ -27,9 +34,9 @@ class Subject extends Component {
     .then(
       (result) => {
         jsZip.loadAsync(result).then(function (zip) {
-          zip.files["snark_data/verification_key.json"].async('string').then(fileData => component.setState({ verification_key: fileData }))
-          zip.files["snark_data/proving_key.json"].async('string').then(fileData => component.setState({ proving_key: fileData }))
-          zip.files["snark_data/circuit.json"].async('string').then(fileData => component.setState({ cir_def: fileData }))
+          zip.files["snark_data/verification_key.json"].async('string').then(fileData => component.setState({ verification_key: JSON.parse(fileData), has_snark_data: { ...component.state.has_snark_data, verification_key: true }}))
+          zip.files["snark_data/proving_key.json"].async('string').then(fileData => component.setState({ proving_key: JSON.parse(fileData), has_snark_data: { ...component.state.has_snark_data, proving_key: true }}))
+          zip.files["snark_data/circuit.json"].async('string').then(fileData => component.setState({ cir_def: JSON.parse(fileData), has_snark_data: { ...component.state.has_snark_data, cir_def: true }}))
         })
       },
       // Note: it's important to handle errors here
@@ -47,9 +54,8 @@ class Subject extends Component {
   handleJoin(event) {
     event.preventDefault();
 
-    const data = new FormData();
-
     if (window.zkvote) {
+      const data = new FormData();
       data.set("identityCommitment", window.zkvote.identityCommitment)
       data.set("subjectHash", this.props.subjectHash)
 
@@ -65,42 +71,65 @@ class Subject extends Component {
   handleVote (event) {
     event.preventDefault();
 
-    // Get identity path first
-    let url = new URL(endpoint + "/subjects/identity_path");
-    url.search = new URLSearchParams({
-      subjectHash: this.props.subjectHash,
-      identityCommitment: window.zkvote.identityCommitment
-    }).toString();
+    if (window.zkvote &&
+      this.state.has_snark_data.verification_key === true &&
+      this.state.has_snark_data.proving_key === true &&
+      this.state.has_snark_data.cir_def === true
+      ) {
+      // Get identity path first
+      let url = new URL(endpoint + "/subjects/identity_path");
+      url.search = new URLSearchParams({
+        subjectHash: this.props.subjectHash,
+        identityCommitment: window.zkvote.identityCommitment
+      }).toString();
 
-    fetch(url)
-    .then(res => res.json())
-    .then(
-      (result) => {
-        console.log(result)
-        console.log(this.state.cir_def)
-        console.log(this.state.proving_key)
-        console.log(this.state.verification_key)
-        // Generate Proof
-        // generateProof(
-        //   this.state.cir_def,
-        //   this.state.proving_key,
-        //   this.state.verification_key,
-        //   window.zkvote.secret,
-        //   identity_path,
-        //   "this is a question.",
-        //   i%2
-        // )
-      },
-      // Note: it's important to handle errors here
-      // instead of a catch() block so that we don't swallow
-      // exceptions from actual bugs in components.
-      (error) => {
-        this.setState({
-          isLoaded: true,
-          error
-        });
-      }
-    )
+      fetch(url)
+      .then(res => res.json())
+      .then(
+        res => {
+          let identity_path =  {
+            "path_elements": res.results.path.map(p => bigInt(p)),
+            "path_index": res.results.index,
+            "root": bigInt(res.results.root)
+          }
+
+          // Generate Proof
+          // This will take ~10 minutess
+          let zkvote_proof = generateProof(
+            this.state.cir_def,
+            this.state.proving_key,
+            this.state.verification_key,
+            window.zkvote.secret,
+            identity_path,
+            "this is a question.",
+            0
+          )
+
+          let proof = JSON.stringify(zkvote_proof.proof)
+          console.log(proof)
+
+          // Sumbit proof
+          const data = new FormData();
+          data.set("proof", proof)
+
+          fetch(endpoint + "/subjects/vote", {
+            method: 'POST',
+            body: data,
+          });
+        },
+        // Note: it's important to handle errors here
+        // instead of a catch() block so that we don't swallow
+        // exceptions from actual bugs in components.
+        (error) => {
+          this.setState({
+            isLoaded: true,
+            error
+          });
+        })
+    } else {
+      console.log(this.state.has_snark_data)
+      console.error("identity commitment is not set yet or snark data is not loaded yet")
+    }
   }
 
   render() {
