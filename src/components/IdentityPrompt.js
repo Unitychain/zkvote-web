@@ -37,10 +37,14 @@ class IdentityPrompt extends Component {
     // Store the identity commitment in window object
     // This is a workaround
     // TODO: Use Redux or localstorage
-    window.zkvote = { identityCommitment: identityCommitment }
+    window.zkvote = {
+      identityCommitment: identityCommitment,
+      secret: secret
+    }
   }
 
-  dec2hex(str) { // .toString(16) only works up to 2^53
+  // .toString(16) only works up to 2^53
+  dec2hex(str) {
     var dec = str.toString().split(''), sum = [], hex = [], i, s
     while(dec.length){
         s = 1 * dec.shift()
