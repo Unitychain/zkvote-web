@@ -51,7 +51,7 @@ class SubjectList extends Component {
     // Download snark data
     let url = new URL(endpoint + "/identities/snark_data");
     let component = this
-  
+
     fetch(url)
     .then(res => res.blob())
     .then(
