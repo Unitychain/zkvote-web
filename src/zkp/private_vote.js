@@ -28,6 +28,7 @@ const chai = require('chai');
 const assert = chai.assert;
 
 const snarkjs = require('snarkjs');
+// const bigInt = require("big-integer");
 const bigInt = snarkjs.bigInt;
 
 const circomlib = require('circomlib');
@@ -59,8 +60,8 @@ function vote(private_key, identity_path, question, signal) {
     const pubKey = eddsa.prv2pub(prvKey);
     
     const id = get_id_commitment(private_key)
-    console.log("secret:\n ", id.id_secret, " --> identity_secret")
-    console.log("id commitment:\n ", id.id_commitment)
+    // console.log("secret:\n ", id.id_secret, " --> identity_secret")
+    // console.log("id commitment:\n ", id.id_commitment)
 
     // verify signature
     // let big_question = bigInt.leBuff2int(Buffer.from(question));

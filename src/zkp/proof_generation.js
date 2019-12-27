@@ -1,49 +1,66 @@
 const privateVote = require('./private_vote.js')
 const snarkjs = require("snarkjs");
-const {unstringifyBigInts, stringifyBigInts} = require('snarkjs/src/stringifybigint.js');
+const snarkjsStringify = require('snarkjs/src/stringifybigint.js');
+const websnarkStringify =  require('websnark/tools/stringifybigint.js');
 const chai = require('chai');
 const assert = chai.assert;
+const converter = require('./witness_conversion.js')
+const websnark = require('websnark')
 
-function generateProof(cir_def, proving_key, verification_key, prvSeed, identity_path, quesiton, vote) {
-    let now = Date.now();
-    const inputs = privateVote.vote(prvSeed, identity_path, quesiton, vote)
-    console.log(`inputs:`, unstringifyBigInts(inputs));
+const generateProof = async function(cir_def, proving_key, verification_key, prvSeed, identity_path, quesiton, vote) {
 
-    // 
-    // calculating witness
-    //
-    now = Date.now();
-    const circuit = new snarkjs.Circuit(cir_def);
-    console.log("Witness calculating...")
-    const w = circuit.calculateWitness(unstringifyBigInts(inputs));
-    console.log(`calculating witness (took ${Date.now() - now} msecs)`);
-    assert(circuit.checkWitness(w));
+    try {
+        const bn128 = await websnark.buildBn128()
+        let now = Date.now();
+        const inputs = privateVote.vote(prvSeed, identity_path, quesiton, vote)
+        // console.log(`inputs:`, snarkjsStringify.unstringifyBigInts(inputs));
 
-    //
-    // verify witness content
-    //
-    const root = w[circuit.getSignalIdx('main.root')];
-    const nullifiers_hash = w[circuit.getSignalIdx('main.nullifiers_hash')];
-    console.log("nullifiers_hash : ", nullifiers_hash)
-    console.log(`root from proof:`, root);
-    assert.equal(root.toString(), identity_path.root);
+        // 
+        // calculating witness
+        //
+        now = Date.now();
+        const circuit = new snarkjs.Circuit(cir_def);
+        console.log("Witness calculating...")
+        const w = circuit.calculateWitness(snarkjsStringify.unstringifyBigInts(inputs));
+        console.log(`calculating witness (took ${Date.now() - now} msecs)`);
+        assert(circuit.checkWitness(w));
+        const xx = websnarkStringify.unstringifyBigInts(JSON.parse(JSON.stringify(snarkjsStringify.stringifyBigInts(w))))
+        // console.log(xx)
+        const wb = converter.convert_witness(xx)
+        
+        //
+        // verify witness content
+        //
+        const root = w[circuit.getSignalIdx('main.root')];
+        const nullifiers_hash = w[circuit.getSignalIdx('main.nullifiers_hash')];
+        console.log("nullifiers_hash : ", nullifiers_hash)
+        console.log(`root from proof:`, root);
+        assert.equal(root.toString(), identity_path.root);
 
-    //
-    // generating proof
-    //
-    now = Date.now()
-    console.log("Proof generating...")
-    const {proof, publicSignals} = snarkjs.groth.genProof(unstringifyBigInts(proving_key), w);
-    console.log(`generating proof (took ${Date.now()-now} msecs)`);
-    // console.log(`proof: ${JSON.stringify(stringifyBigInts(proof))}`);
+        //
+        // generating proof
+        //
+        now = Date.now()
+        console.log("Proof generating...")
+        const proof = await bn128.groth16GenProof(wb, proving_key)
+        // const {proof, publicSignals} = snarkjs.groth.genProof(unstringifyBigInts(proving_key), w);
+        console.log(`generating proof (took ${Date.now()-now} msecs)`);
+        // console.log(`proof: ${JSON.stringify(snarkjsStringifyBigInts(proof))}`);
 
-    assert(snarkjs.groth.isValid(unstringifyBigInts(verification_key), proof, publicSignals));
+        let publicSignals = w.slice(1, 4+1);
+        console.log(await 
+            bn128.groth16Verify(websnarkStringify.unstringifyBigInts(verification_key), publicSignals, proof));
+        // assert(snarkjs.groth.isValid(unstringifyBigInts(verification_key), proof, publicSignals));
 
-    return {
-        "root": root.toString(),
-        "nullifier_hash": nullifiers_hash.toString(),
-        "proof": stringifyBigInts(proof),
-        "public_signal": stringifyBigInts(publicSignals)
+        return {
+            "root": root.toString(),
+            "nullifier_hash": nullifiers_hash.toString(),
+            "proof": snarkjsStringify.stringifyBigInts(proof),
+            "public_signal": snarkjsStringify.stringifyBigInts(publicSignals)
+        }
+    }
+    catch(e) {
+        console.log(e)
     }
 }
 

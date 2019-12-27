@@ -1,5 +1,6 @@
 const privateVote = require('./private_vote.js')
 const proof = require('./proof_generation.js');
+const tool = require('./witness_conversion.js')
 const fs = require('fs');
 
 const snarkjs = require('snarkjs');
@@ -8,6 +9,8 @@ const bigInt = snarkjs.bigInt;
 const circomlib = require('circomlib');
 const mimcsponge = circomlib.mimcsponge;
 const mimc7 = circomlib.mimc7;
+
+const {unstringifyBigInts, stringifyBigInts} = require('websnark/tools/stringifybigint.js');
 
 // const input = privateVote.vote("0001020304050607080900010203040506070809000102030405060708090001", 
 //                                 0,
@@ -79,12 +82,24 @@ let build_full_merkle_tree_example = (n_levels, index, identity_commitment) => {
     return [root,  path_elements, path_index];
 };
 
+const gen = async () =>{
 
-const cir_def = JSON.parse(fs.readFileSync('./snark_data/circuit.json', 'utf8'));
-const proving_key = JSON.parse(fs.readFileSync('./snark_data/proving_key.json', 'utf8'));
-const verification_key = JSON.parse(fs.readFileSync('./snark_data/verification_key.json', 'utf8'));
-// const tree = build_merkle_tree_example(10, privateVote.get_id_commitment(private_key).id_commitment)
-for (let i=0; i<10; i++) {
+  const cir_def = JSON.parse(fs.readFileSync('./snark_data/circuit.json', 'utf8'));
+  // const proving_key = JSON.parse(fs.readFileSync('./snark_data/proving_key.json', 'utf8'));
+  const proving_key = fs.readFileSync('./snark_data/proving_key.bin');
+  const verification_key = JSON.parse(fs.readFileSync('./snark_data/verification_key.json', 'utf8'));
+  // const tree = build_merkle_tree_example(10, privateVote.get_id_commitment(private_key).id_commitment)
+
+  console.log("Proof conversion...")
+  let now = Date.now()
+  var pk = new ArrayBuffer(proving_key.length);
+  var arr = new Uint32Array(pk);
+  for (var i=0; i<proving_key.length/4; i++) {
+      arr[i] = new Uint32Array(proving_key.buffer.slice(4*i, 4*i+4))
+  }
+  console.log(`proof conversion (took ${Date.now()-now} msecs)`);
+
+  for (let i=0; i<10; i++) {
     const private_key = "00010203040506070809000102030405060708090001020304050607080900" + i
     const tree = build_full_merkle_tree_example(10, i, privateVote.get_id_commitment(private_key).id_commitment)
     // console.log(tree)
@@ -93,9 +108,9 @@ for (let i=0; i<10; i++) {
         "path_index":   tree[2], 
         "root": tree[0]
     }
-    const proofs = proof.generateProof(
+    const proofs = await proof.generateProof(
         cir_def,
-        proving_key,
+        pk,
         verification_key,
         private_key, 
         identity_path,
@@ -105,5 +120,7 @@ for (let i=0; i<10; i++) {
     const file = "vote" + i + ".proof"
     fs.writeFileSync(file, JSON.stringify(proofs), "utf8");
     // console.log("output\n", proofs)
-}
+  }
+};
 
+gen()
