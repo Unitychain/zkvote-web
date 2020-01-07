@@ -1,4 +1,3 @@
-const {unstringifyBigInts} = require("websnark/tools/stringifybigint.js");
 // const fs = require("fs");
 const assert = require("assert");
 

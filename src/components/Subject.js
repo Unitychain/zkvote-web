@@ -1,8 +1,9 @@
 import React, { Component } from 'react';
 import { Card, Button, Col } from 'react-bootstrap';
 import { endpoint } from '../env';
-import { generateProof } from '../zkp/proof_generation';
-import snarkjs from 'snarkjs';
+import { generateWitness } from '../zkp/proof_generation';
+import snarkjs, { stringifyBigInts } from 'snarkjs';
+
 const bigInt = snarkjs.bigInt;
 
 class Subject extends Component {
@@ -62,31 +63,40 @@ class Subject extends Component {
           "root": bigInt(res.results.root)
         }
 
-        // Generate Proof
-        // This will take ~10 minutess
-        let zkvote_proof = generateProof(
+        // Generate Witness
+        generateWitness(
           this.props.cir_def,
-          this.props.proving_key,
-          this.props.verification_key,
           window.zkvote.secret,
           identity_path,
           this.props.subjectHash,
           opt
-        )
+        ).then(res => {
+          // Generate Proof
+          // This will take ~60 seconds
+          let witness = res
+          window.groth16GenProof(witness.witness, this.props.proving_key).then(proof => {
+            let zkvote_proof = JSON.stringify({
+              root: witness.root.toString(),
+              nullifier_hash: witness.nullifier_hash.toString(),
+              proof: stringifyBigInts(proof),
+              public_signal: stringifyBigInts(witness.signals)
+            })
 
-        // Sumbit proof
-        const data = new FormData();
-        data.set("subjectHash", this.props.subjectHash)
-        data.set("proof", JSON.stringify(zkvote_proof))
+            // Sumbit proof
+            const data = new FormData();
+            data.set("subjectHash", this.props.subjectHash)
+            data.set("proof", zkvote_proof)
 
-        fetch(endpoint + "/subjects/vote", {
-          method: 'POST',
-          body: data,
+            fetch(endpoint + "/subjects/vote", {
+              method: 'POST',
+              body: data,
+            })
+            .then(res => res.json())
+            .then(res => {
+              console.log(res)
+            })
+          })
         })
-        .then(res => res.json())
-        .then(res => {
-          console.log(res)
-        });
       },
       // Note: it's important to handle errors here
       // instead of a catch() block so that we don't swallow
