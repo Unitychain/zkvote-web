@@ -57,8 +57,8 @@ class SubjectList extends Component {
     .then(
       (result) => {
         jsZip.loadAsync(result).then(function (zip) {
+          zip.files["snark_data/proving_key.bin"].async('string').then(fileData => component.setState({ proving_key: fileData, has_snark_data: { ...component.state.has_snark_data, proving_key: true }}))
           zip.files["snark_data/verification_key.json"].async('string').then(fileData => component.setState({ verification_key: JSON.parse(fileData), has_snark_data: { ...component.state.has_snark_data, verification_key: true }}))
-          zip.files["snark_data/proving_key.json"].async('string').then(fileData => component.setState({ proving_key: JSON.parse(fileData), has_snark_data: { ...component.state.has_snark_data, proving_key: true }}))
           zip.files["snark_data/circuit.json"].async('string').then(fileData => component.setState({ cir_def: JSON.parse(fileData), has_snark_data: { ...component.state.has_snark_data, cir_def: true }}))
         })
       },
