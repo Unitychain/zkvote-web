@@ -19,16 +19,13 @@
  */
 
 const crypto = require('crypto');
-// const path = require('path');
 const blake = require('blakejs')
-// const {unstringifyBigInts, stringifyBigInts} = require('websnark/tools/stringifybigint.js');
 const {stringifyBigInts} = require('snarkjs/src/stringifybigint.js');
 
 const chai = require('chai');
 const assert = chai.assert;
 
 const snarkjs = require('snarkjs');
-// const bigInt = require("big-integer");
 const bigInt = snarkjs.bigInt;
 
 const circomlib = require('circomlib');
@@ -134,8 +131,8 @@ function get_id_commitment(private_key) {
 function generate_identity() {
   const private_key = crypto.randomBytes(32).toString('hex');
   const pubKey = eddsa.prv2pub(Buffer.from(private_key, 'hex'));
-  console.log(`generate identity from (private_key, public_key[0], public_key[1]): 
-      (${private_key}, ${pubKey[0]}, ${pubKey[1]})`);
+  // console.log(`generate identity from (private_key, public_key[0], public_key[1]): 
+  //     (${private_key}, ${pubKey[0]}, ${pubKey[1]})`);
 
   return private_key;
 }

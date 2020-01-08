@@ -88,7 +88,7 @@ const gen = async () =>{
   // const proving_key = JSON.parse(fs.readFileSync('./snark_data/proving_key.json', 'utf8'));
   const proving_key = fs.readFileSync('./snark_data/proving_key.bin');
   const verification_key = JSON.parse(fs.readFileSync('./snark_data/verification_key.json', 'utf8'));
-  // const tree = build_merkle_tree_example(10, privateVote.get_id_commitment(private_key).id_commitment)
+  
 
   console.log("Proof conversion...")
   let now = Date.now()
@@ -99,7 +99,7 @@ const gen = async () =>{
   }
   console.log(`proof conversion (took ${Date.now()-now} msecs)`);
 
-  for (let i=0; i<1; i++) {
+  for (let i=0; i<10; i++) {
     const private_key = "00010203040506070809000102030405060708090001020304050607080900" + i
     const tree = build_full_merkle_tree_example(10, i, privateVote.get_id_commitment(private_key).id_commitment)
     // console.log(tree)
@@ -118,8 +118,8 @@ const gen = async () =>{
         i%2
     )
     const file = "vote" + i + ".proof"
-    // fs.writeFileSync(file, JSON.stringify(proofs), "utf8");
-    console.log("output\n", proofs)
+    fs.writeFileSync(file, JSON.stringify(proofs), "utf8");
+    // console.log("output\n", proofs)
   }
 };
 
