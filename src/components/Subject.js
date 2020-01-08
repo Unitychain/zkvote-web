@@ -74,7 +74,9 @@ class Subject extends Component {
           // Generate Proof
           // This will take ~60 seconds
           let witness = res
+          let now = Date.now();
           window.groth16GenProof(witness.witness, this.props.proving_key).then(proof => {
+            console.log(`calculating proof (took ${Date.now() - now} msecs)`);
             let zkvote_proof = JSON.stringify({
               root: witness.root.toString(),
               nullifier_hash: witness.nullifier_hash.toString(),
