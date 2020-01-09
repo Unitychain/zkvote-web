@@ -63,11 +63,11 @@ function vote(private_key, identity_path, question, signal) {
     // verify signature
     // let big_question = bigInt.leBuff2int(Buffer.from(question));
     // const question_hash = circomlib.mimcsponge.multiHash([big_question])
-    const hex_question_hash = ethers.utils.solidityKeccak256(
-      ['string'],
-      [question],
-    );
-    let question_hash = bigInt.beBuff2int(Buffer.from(hex_question_hash.slice(2), 'hex'));
+    // const hex_question_hash = ethers.utils.solidityKeccak256(
+    //   ['string'],
+    //   [question],
+    // );
+    let question_hash = bigInt.beBuff2int(Buffer.from(question, 'hex'));
     question_hash = question_hash/bigInt(8)
     // question_hash = bigInt("16006556194422204507365531149559851628469255505732934222920126460960359256387")
   
