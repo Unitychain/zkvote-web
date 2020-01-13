@@ -55,7 +55,13 @@ class Subject extends Component {
       }).toString();
 
       fetch(url)
-      .then(res => res.json())
+      .then(res => {
+        if (res.ok) {
+          return res.json()
+        } else {
+          throw new Error("Can't get idenitty path");
+        }
+      })
       .then(res => {
         let identity_path =  {
           "path_elements": res.results.path.map(p => bigInt(p)),
@@ -99,15 +105,9 @@ class Subject extends Component {
             })
           })
         })
-      },
-      // Note: it's important to handle errors here
-      // instead of a catch() block so that we don't swallow
-      // exceptions from actual bugs in components.
-      (error) => {
-        this.setState({
-          isLoaded: true,
-          error
-        });
+      })
+      .catch(err => {
+        console.log('Request failed', err)
       })
     } else {
       console.log(this.props.has_snark_data)
