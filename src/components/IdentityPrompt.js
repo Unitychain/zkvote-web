@@ -10,6 +10,7 @@ class IdentityPrompt extends Component {
     this.handleClose = this.handleClose.bind(this)
     this.handleShow = this.handleShow.bind(this)
     this.handleSecretChange = this.handleSecretChange.bind(this);
+    this.handleIdcRemoval = this.handleIdcRemoval.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
   }
 
@@ -25,6 +26,12 @@ class IdentityPrompt extends Component {
     this.setState({ secret: event.target.value });
   }
 
+  handleIdcRemoval() {
+    this.setState({ secret: '' });
+    window.localStorage.removeItem('secret')
+    window.localStorage.removeItem('identityCommitment')
+  }
+
   handleSubmit(event) {
     event.preventDefault();
     this.handleClose()
@@ -37,10 +44,8 @@ class IdentityPrompt extends Component {
     // Store the identity commitment in window object
     // This is a workaround
     // TODO: Use Redux or localstorage
-    window.zkvote = {
-      identityCommitment: identityCommitment,
-      secret: secret
-    }
+    window.localStorage.setItem('secret', secret)
+    window.localStorage.setItem('identityCommitment', identityCommitment)
   }
 
   // .toString(16) only works up to 2^53
@@ -62,8 +67,16 @@ class IdentityPrompt extends Component {
 
   render() {
     let comp
-    if (window.zkvote) {
-      comp = <span style={{ color: "white" }}>Identity Commitment: {window.zkvote.identityCommitment}</span>
+    let store = window.localStorage
+    let idc = store.getItem('identityCommitment')
+    if (idc) {
+      comp = <div>
+        <span style={{ color: "white" }}>Identity Commitment: {idc.slice(0, 5) + "......" + idc.slice(59, 64)}</span>
+        &nbsp;&nbsp;
+        <Button variant="danger" onClick={this.handleIdcRemoval}>
+          Change Identity
+        </Button>
+      </div>
     } else {
       comp = <Button variant="primary" onClick={this.handleShow}>
         Import Identity

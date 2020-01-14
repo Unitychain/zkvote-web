@@ -22,13 +22,19 @@ class Subject extends Component {
     this.handleOpen = this.handleOpen.bind(this);
   }
 
+  componentDidMount() {
+    // Open votes
+    this.handleOpen()
+  }
+
   handleJoin(event) {
     event.preventDefault();
+    let idc = window.localStorage.getItem('identityCommitment')
 
-    if (window.zkvote) {
+    if (idc) {
       const data = new FormData();
       data.set("subjectHash", this.props.subjectHash)
-      data.set("identityCommitment", window.zkvote.identityCommitment)
+      data.set("identityCommitment", idc)
 
       fetch(endpoint + "/subjects/join", {
         method: 'POST',
@@ -41,8 +47,10 @@ class Subject extends Component {
 
   handleVote (event, opt) {
     event.preventDefault();
+    let idc = window.localStorage.getItem('identityCommitment')
+    let secret = window.localStorage.getItem('secret')
 
-    if (window.zkvote &&
+    if (idc && secret &&
       this.props.has_snark_data.verification_key === true &&
       this.props.has_snark_data.proving_key === true &&
       this.props.has_snark_data.cir_def === true
@@ -51,7 +59,7 @@ class Subject extends Component {
       let url = new URL(endpoint + "/subjects/identity_path");
       url.search = new URLSearchParams({
         subjectHash: this.props.subjectHash,
-        identityCommitment: window.zkvote.identityCommitment
+        identityCommitment: idc
       }).toString();
 
       fetch(url)
@@ -72,7 +80,7 @@ class Subject extends Component {
         // Generate Witness
         generateWitness(
           this.props.cir_def,
-          window.zkvote.secret,
+          secret,
           identity_path,
           this.props.subjectHash,
           opt
@@ -161,10 +169,10 @@ class Subject extends Component {
               {this.props.description}
             </Card.Text>
             <Card.Text>
-              Proposer: {this.props.proposer}
+              Proposer: {this.props.proposer.slice(0, 5) + "......" + this.props.proposer.slice(59, 64)}
             </Card.Text>
             <Card.Text>
-              Subjech Hash: {this.props.subjectHash}
+              Subjech Hash: {this.props.subjectHash.slice(0, 5) + "......" + this.props.subjectHash.slice(59, 64)}
             </Card.Text>
             <Card.Text>
               Yes: {this.state.open.yes}, No: {this.state.open.no}
