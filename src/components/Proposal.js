@@ -35,9 +35,10 @@ class Proposal extends Component {
     this.handleClose()
 
     const data = new FormData(event.target);
+    let idc = window.localStorage.getItem('identityCommitment')
 
-    if (window.zkvote) {
-      data.set("identityCommitment", window.zkvote.identityCommitment)
+    if (idc) {
+      data.set("identityCommitment", idc)
 
       fetch(endpoint + "/subjects/propose", {
         method: 'POST',

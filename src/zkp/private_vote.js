@@ -20,7 +20,6 @@
 
 const crypto = require('crypto');
 const blake = require('blakejs')
-const {stringifyBigInts} = require('snarkjs/src/stringifybigint.js');
 
 const chai = require('chai');
 const assert = chai.assert;
