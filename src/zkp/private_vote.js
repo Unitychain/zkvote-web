@@ -55,7 +55,7 @@ function vote(private_key, identity_path, question, signal) {
     // console.log(`identity_path: ${stringifyBigInts(identity_path)}`);
     const prvKey = Buffer.from(private_key, 'hex');
     const pubKey = eddsa.prv2pub(prvKey);
-    
+
     const id = get_id_commitment(private_key)
     // console.log("secret:\n ", id.id_secret, " --> identity_secret")
     // console.log("id commitment:\n ", id.id_commitment)

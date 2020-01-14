@@ -63,7 +63,7 @@ class IdentityPrompt extends Component {
   render() {
     let comp
     if (window.zkvote) {
-      comp = <span style={{ color: "white" }}>Identity Commitment: {window.zkvote.identityCommitment}</span>
+      comp = <span style={{ color: "white" }}>Identity Commitment: {window.zkvote.identityCommitment.slice(0, 5) + "......" + window.zkvote.identityCommitment.slice(59, 64)}</span>
     } else {
       comp = <Button variant="primary" onClick={this.handleShow}>
         Import Identity

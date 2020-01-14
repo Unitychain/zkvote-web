@@ -161,10 +161,10 @@ class Subject extends Component {
               {this.props.description}
             </Card.Text>
             <Card.Text>
-              Proposer: {this.props.proposer}
+              Proposer: {this.props.proposer.slice(0, 5) + "......" + this.props.proposer.slice(59, 64)}
             </Card.Text>
             <Card.Text>
-              Subjech Hash: {this.props.subjectHash}
+              Subjech Hash: {this.props.subjectHash.slice(0, 5) + "......" + this.props.subjectHash.slice(59, 64)}
             </Card.Text>
             <Card.Text>
               Yes: {this.state.open.yes}, No: {this.state.open.no}
