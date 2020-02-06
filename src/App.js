@@ -5,6 +5,7 @@ import { Navbar, Nav } from 'react-bootstrap';
 import SubjectList from './components/SubjectList';
 import Proposal from './components/Proposal';
 import IdentityPrompt from './components/IdentityPrompt';
+import DIDRegistry from './components/DIDRegistry';
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
           <IdentityPrompt />
         </Nav>
       </Navbar>
+      <DIDRegistry />
       <SubjectList />
       {/* <header className="App-header">
         <img src={logo} className="App-logo" alt="logo" />
