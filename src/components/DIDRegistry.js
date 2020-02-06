@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import { Button } from 'react-bootstrap';
 import Web3 from 'web3';
 import EthrDID from 'ethr-did';
 import didJWT from 'did-jwt';
@@ -9,9 +10,10 @@ import { createVerifiableCredential, verifyCredential } from 'did-jwt-vc'
 class DIDRegistry extends Component {
   constructor(props) {
     super(props);
+    this.demoVC = this.demoVC.bind(this)
   }
 
-  componentDidMount() {
+  demoVC() {
     const keypair = EthrDID.createKeyPair()
     Web3.providers.HttpProvider.prototype.sendAsync = Web3.providers.HttpProvider.prototype.send
     let provider = new Web3.providers.HttpProvider(
@@ -19,16 +21,19 @@ class DIDRegistry extends Component {
     );
     let ethrDid = getResolver({ provider: provider })
     let resolver = new Resolver(ethrDid)
+    let did = 'did:ethr:' + keypair.address
+    console.log("Generated DID:")
+    console.log(did)
 
     // Use did-jwt
     const signer = didJWT.SimpleSigner(keypair.privateKey)
     didJWT.createJWT({
-      aud: 'did:ethr:' + keypair.address,
+      aud: did,
       exp: 1957463421,
       name: 'uPort Developer'},
       {
         alg: 'ES256K-R',
-        issuer: 'did:ethr:' + keypair.address,
+        issuer: did,
         signer
       }).then(jwt => {
         let decoded = didJWT.decodeJWT(jwt)
@@ -36,7 +41,7 @@ class DIDRegistry extends Component {
         console.log(decoded)
 
         // Verify
-        didJWT.verifyJWT(jwt, { resolver: resolver, audience: 'did:ethr:' + keypair.address }).then(response =>
+        didJWT.verifyJWT(jwt, { resolver: resolver, audience: did }).then(response =>
           {
             console.log("{payload, doc, issuer, signer, jwt}:")
             console.log(response)
@@ -45,11 +50,10 @@ class DIDRegistry extends Component {
       }
     );
 
-    // Or use did-jwt-vc
-    // Cleaner!
+    // Or use did-jwt-vc to make the code cleaner!
     const issuer = new EthrDID(keypair)
     const vcPayload = {
-      sub: 'did:ethr:0x435df3eda57154cf8cf7926079881f2912f54db4',
+      sub: did,
       nbf: 1562950282,
       vc: {
         '@context': ['https://www.w3.org/2018/credentials/v1'],
@@ -75,7 +79,13 @@ class DIDRegistry extends Component {
 
   render() {
     return (
-      <span>DID</span>
+      <div>
+        <br />
+        <Button variant="success" onClick={this.demoVC}>
+          Demo VC
+        </Button>
+        <br />
+      </div>
     );
   }
 }

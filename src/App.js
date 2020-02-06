@@ -27,8 +27,8 @@ function App() {
           <IdentityPrompt />
         </Nav>
       </Navbar>
-      <SubjectList />
       <DIDRegistry />
+      <SubjectList />
       {/* <header className="App-header">
         <img src={logo} className="App-logo" alt="logo" />
         <p>
