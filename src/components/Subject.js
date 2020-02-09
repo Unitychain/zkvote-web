@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import { Card, Button, Col } from 'react-bootstrap';
+import VCPrompt from './VCPrompt';
 import { endpoint } from '../env';
 import { generateWitness } from '../zkp/proof_generation';
 import snarkjs, { stringifyBigInts } from 'snarkjs';
@@ -182,6 +183,9 @@ class Subject extends Component {
             <br />
             <Button style={{ margin: '2px' }} variant="success" onClick={e => this.handleVote(e, 1)}>Agree</Button>
             <Button style={{ margin: '2px' }} variant="warning" onClick={e => this.handleVote(e, 0)}>Disagree</Button>
+            <br />
+            <VCPrompt proposer={this.props.proposer}
+              subjectHash={this.props.subjectHash} />
             {/* <Button style={{ margin: '2px' }} variant="success" onClick={this.handleVoteDebug.bind(this, 1)}>*Agree</Button>
             <Button style={{ margin: '2px' }} variant="warning" onClick={this.handleVoteDebug.bind(this, 0)}>*Disagree</Button> */}
             {/* <Card.Link href="#">Register</Card.Link>

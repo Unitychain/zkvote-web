@@ -4,8 +4,8 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import { Navbar, Nav } from 'react-bootstrap';
 import SubjectList from './components/SubjectList';
 import Proposal from './components/Proposal';
-import IdentityPrompt from './components/IdentityPrompt';
-import DIDRegistry from './components/DIDRegistry';
+import IdentityGenerator from './components/IdentityGenerator';
+import DIDDemo from './components/DIDDemo';
 
 function App() {
   return (
@@ -24,10 +24,11 @@ function App() {
         <Nav className="ml-auto">
           <Proposal />
           &nbsp;&nbsp;
-          <IdentityPrompt />
+          <IdentityGenerator />
+          &nbsp;&nbsp;
+          <DIDDemo />
         </Nav>
       </Navbar>
-      <DIDRegistry />
       <SubjectList />
       {/* <header className="App-header">
         <img src={logo} className="App-logo" alt="logo" />
