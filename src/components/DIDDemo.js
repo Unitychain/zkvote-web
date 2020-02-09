@@ -7,7 +7,7 @@ import { Resolver } from 'did-resolver'
 import { getResolver } from 'ethr-did-resolver'
 import { createVerifiableCredential, verifyCredential } from 'did-jwt-vc'
 
-class DIDRegistry extends Component {
+class DIDDemo extends Component {
   constructor(props) {
     super(props);
     this.demoVC = this.demoVC.bind(this)
@@ -15,6 +15,8 @@ class DIDRegistry extends Component {
 
   demoVC() {
     const keypair = EthrDID.createKeyPair()
+    console.log("Generated Private Key:")
+    console.log(keypair.privateKey)
     Web3.providers.HttpProvider.prototype.sendAsync = Web3.providers.HttpProvider.prototype.send
     let provider = new Web3.providers.HttpProvider(
       'https://ropsten.infura.io/v3/95d5fb90d73c4b639ab2799ffecd26cc'
@@ -51,7 +53,7 @@ class DIDRegistry extends Component {
     );
 
     // Or use did-jwt-vc to make the code cleaner!
-    const issuer = new EthrDID(keypair)
+    const issuer = new EthrDID({ privateKey: keypair.privateKey, address: keypair.address })
     const vcPayload = {
       sub: did,
       nbf: 1562950282,
@@ -79,15 +81,11 @@ class DIDRegistry extends Component {
 
   render() {
     return (
-      <div>
-        <br />
-        <Button variant="success" onClick={this.demoVC}>
-          Demo VC
-        </Button>
-        <br />
-      </div>
+      <Button variant="success" onClick={this.demoVC}>
+        Demo VC
+      </Button>
     );
   }
 }
 
-export default DIDRegistry;
+export default DIDDemo;
