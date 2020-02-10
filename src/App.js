@@ -2,6 +2,7 @@ import React from 'react';
 import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { Navbar, Nav } from 'react-bootstrap';
+import logo from './logo.png'
 import SubjectList from './components/SubjectList';
 import Proposal from './components/Proposal';
 import IdentityGenerator from './components/IdentityGenerator';
@@ -14,7 +15,7 @@ function App() {
         <Navbar.Brand href="#home">
           <img
             alt=""
-            src="/logo.svg"
+            src={logo}
             width="30"
             height="30"
             className="d-inline-block align-top"
@@ -30,20 +31,6 @@ function App() {
         </Nav>
       </Navbar>
       <SubjectList />
-      {/* <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header> */}
     </div>
   );
 }
