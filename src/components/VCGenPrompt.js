@@ -1,12 +1,9 @@
 import React, { Component } from 'react';
 import { Button, Modal, Form } from 'react-bootstrap';
-import Web3 from 'web3';
 import EthrDID from 'ethr-did';
-import { Resolver } from 'did-resolver'
-import { getResolver } from 'ethr-did-resolver'
-import { createVerifiableCredential, verifyCredential } from 'did-jwt-vc'
+import { createVerifiableCredential } from 'did-jwt-vc'
 
-class VCPrompt extends Component {    
+class VCGenPrompt extends Component {    
   constructor(props) {
     super(props);
     this.state = { show: false, identityCommitment: '' };
@@ -37,13 +34,6 @@ class VCPrompt extends Component {
     let address = window.localStorage.getItem('address')
     let did = window.localStorage.getItem('did')
 
-    Web3.providers.HttpProvider.prototype.sendAsync = Web3.providers.HttpProvider.prototype.send
-    let provider = new Web3.providers.HttpProvider(
-      'https://ropsten.infura.io/v3/95d5fb90d73c4b639ab2799ffecd26cc'
-    );
-    let ethrDid = getResolver({ provider: provider })
-    let resolver = new Resolver(ethrDid)
-
     const issuer = new EthrDID({ privateKey, address })
     const vcPayload = {
       sub: did,
@@ -61,10 +51,6 @@ class VCPrompt extends Component {
     createVerifiableCredential(vcPayload, issuer).then(vcJwt => {
       console.log("VC JWT:")
       console.log(vcJwt)
-      verifyCredential(vcJwt, resolver).then(verifiedVC => {
-        console.log("Verified VC:")
-        console.log(verifiedVC)
-      })
     })
   }
 
@@ -114,4 +100,4 @@ class VCPrompt extends Component {
   }
 }
 
-export default VCPrompt;
+export default VCGenPrompt;
