@@ -133,6 +133,8 @@ class VCVerPrompt extends Component {
         } else {
           console.error("VC is not valid")
         }
+      }).catch(err => {
+        console.error(err)
       })
     } else {
       console.error("VC is not given")
