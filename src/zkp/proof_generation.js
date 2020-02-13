@@ -82,5 +82,4 @@ const generateWitness = async function(cir_def, prvSeed, identity_path, quesiton
 //     }
 // }
 
-// exports.generateProof = generateProof
-exports.generateWitness = generateWitness
+export { generateWitness }
