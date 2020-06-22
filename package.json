@@ -14,6 +14,7 @@
     "did-jwt-vc": "^0.1.2",
     "did-resolver": "^1.1.0",
     "eslint": "^6.7.2",
+    "ethers": "^5.0.2",
     "ethr-did": "^1.1.0",
     "ethr-did-resolver": "^2.0.0",
     "jszip": "^3.2.2",
